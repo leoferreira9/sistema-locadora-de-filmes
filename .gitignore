@@ -1,0 +1,14 @@
+# IntelliJ files
+.idea/
+*.iml
+
+# Java build files
+*.class
+*.jar
+*.war
+
+# Logs
+*.log
+
+# Sistema de conexão com banco
+src/database/db.properties
