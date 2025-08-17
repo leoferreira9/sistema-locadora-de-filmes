@@ -12,3 +12,4 @@
 
 # Sistema de conexão com banco
 src/database/db.properties
+/out/
