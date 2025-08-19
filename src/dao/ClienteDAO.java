@@ -5,8 +5,11 @@ import model.Cliente;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ClienteDAO {
 
@@ -43,6 +46,37 @@ public class ClienteDAO {
 
             connection.commit();
         }catch (SQLException e){
+            System.err.println("\nFalha ao adicionar um novo cliente: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<Cliente> listar(){
+        String sql = "SELECT id, nome, email, data_nascimento, telefone " +
+                "FROM cliente";
+
+        List<Cliente> clientes = new ArrayList<>();
+        try (Connection connection = DB.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(sql)){
+
+            try (ResultSet rs = stmt.executeQuery()){
+                if(!rs.isBeforeFirst()){
+                    System.err.println("\nNão há clientes para exibir.");
+                } else {
+                    while(rs.next()){
+                        int id = rs.getInt("id");
+                        String nome = rs.getString("nome");
+                        String email = rs.getString("email");
+                        LocalDate dataNascimento = rs.getDate("data_nascimento").toLocalDate();
+                        String telefone = rs.getString("telefone");
+
+                        clientes.add(new Cliente(id, nome, email, dataNascimento, telefone));
+                    }
+                }
+            }
+            return clientes;
+        }catch (SQLException e){
+            System.err.println("\nFalha ao listar clientes: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
