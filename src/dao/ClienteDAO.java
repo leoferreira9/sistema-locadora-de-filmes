@@ -14,9 +14,10 @@ import java.util.List;
 public class ClienteDAO {
 
     public void inserir(Cliente cliente){
-        if(cliente.getEmail().isEmpty() || cliente.getEmail() == null
-        || cliente.getNome().isEmpty() || cliente.getNome() == null
-        || cliente.getTelefone().isEmpty() || cliente.getTelefone() == null
+        if(cliente == null
+        || cliente.getNome() == null || cliente.getNome().trim().isEmpty()
+        || cliente.getEmail() == null || cliente.getEmail().trim().isEmpty()
+        || cliente.getTelefone() == null || cliente.getTelefone().trim().isEmpty()
         || cliente.getDataNascimento() == null || cliente.getDataNascimento().isAfter(LocalDate.now())){
             System.err.println("Dados inválidos do cliente.");
             return;
@@ -30,10 +31,10 @@ public class ClienteDAO {
 
             connection.setAutoCommit(false);
 
-            stmt.setString(1, cliente.getNome());
-            stmt.setString(2, cliente.getEmail());
+            stmt.setString(1, cliente.getNome().trim());
+            stmt.setString(2, cliente.getEmail().trim());
             stmt.setDate(3, java.sql.Date.valueOf(cliente.getDataNascimento()));
-            stmt.setString(4, cliente.getTelefone());
+            stmt.setString(4, cliente.getTelefone().trim());
 
             int rows = stmt.executeUpdate();
 
@@ -118,6 +119,56 @@ public class ClienteDAO {
             return cliente;
         }catch (SQLException e){
             System.err.println("\nFalha ao buscar cliente por ID: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void atualizar(Cliente cliente){
+        if(cliente == null
+        || cliente.getNome() == null || cliente.getNome().trim().isEmpty()
+        || cliente.getEmail() == null || cliente.getEmail().trim().isEmpty()
+        || cliente.getTelefone() == null || cliente.getTelefone().trim().isEmpty()
+        || cliente.getDataNascimento() == null || cliente.getDataNascimento().isAfter(LocalDate.now()))
+        {
+            System.err.println("\nDados inválidos do cliente.");
+            return;
+        }
+
+        String selectSql = "SELECT id, nome, email, data_nascimento, telefone " +
+                "FROM cliente WHERE id = ?";
+
+        try (Connection connection = DB.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(selectSql)){
+
+            connection.setAutoCommit(false);
+            stmt.setInt(1, cliente.getId());
+
+            try (ResultSet rs = stmt.executeQuery()){
+                if(!rs.next()){
+                    System.err.println("\nNenhum cliente encontrado com o ID (" + cliente.getId() + ").");
+                    connection.rollback();
+                    return;
+                }
+
+                String updateSql = "UPDATE cliente SET nome = ?, email = ?, " +
+                        "data_nascimento = ?, telefone = ? " +
+                        "WHERE id = ?";
+
+                try (PreparedStatement updateStmt = connection.prepareStatement(updateSql)){
+
+                    updateStmt.setString(1, cliente.getNome().trim());
+                    updateStmt.setString(2, cliente.getEmail().trim());
+                    updateStmt.setDate(3, java.sql.Date.valueOf(cliente.getDataNascimento()));
+                    updateStmt.setString(4, cliente.getTelefone().trim());
+                    updateStmt.setInt(5, cliente.getId());
+
+                    updateStmt.execute();
+                    System.out.println("\nCliente atualizado com sucesso!");
+                    connection.commit();
+                }
+            }
+        }catch (SQLException e){
+            System.err.println("\nFalha ao atualizar cliente: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
