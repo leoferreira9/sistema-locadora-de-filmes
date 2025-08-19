@@ -13,3 +13,8 @@
 # Sistema de conexão com banco
 src/database/db.properties
 /out/
+
+# Arquivos temporários ou sensíveis
+*.log
+*.tmp
+*.db
