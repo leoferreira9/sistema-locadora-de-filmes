@@ -59,24 +59,65 @@ public class ClienteDAO {
         try (Connection connection = DB.getConnection();
             PreparedStatement stmt = connection.prepareStatement(sql)){
 
-            try (ResultSet rs = stmt.executeQuery()){
-                if(!rs.isBeforeFirst()){
-                    System.err.println("\nNão há clientes para exibir.");
-                } else {
-                    while(rs.next()){
-                        int id = rs.getInt("id");
-                        String nome = rs.getString("nome");
-                        String email = rs.getString("email");
-                        LocalDate dataNascimento = rs.getDate("data_nascimento").toLocalDate();
-                        String telefone = rs.getString("telefone");
+            boolean encontrou = false;
 
-                        clientes.add(new Cliente(id, nome, email, dataNascimento, telefone));
-                    }
+            try (ResultSet rs = stmt.executeQuery()){
+                while (rs.next()) {
+                    encontrou = true;
+
+                    int id = rs.getInt("id");
+                    String nome = rs.getString("nome");
+                    String email = rs.getString("email");
+                    LocalDate dataNascimento = rs.getDate("data_nascimento").toLocalDate();
+                    String telefone = rs.getString("telefone");
+
+                    clientes.add(new Cliente(id, nome, email, dataNascimento, telefone));
+                }
+
+                if(!encontrou){
+                    System.err.println("Não há clientes para exibir.");
                 }
             }
             return clientes;
         }catch (SQLException e){
             System.err.println("\nFalha ao listar clientes: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Cliente buscarPorId(int id){
+        if(id <= 0){
+            System.err.println("\nID inválido.");
+            return null;
+        }
+
+        String sql = "SELECT id, nome, email, data_nascimento, telefone " +
+                "FROM cliente WHERE id = ?";
+
+        Cliente cliente;
+
+        try (Connection connection = DB.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(sql)){
+
+            stmt.setInt(1, id);
+
+            try (ResultSet rs = stmt.executeQuery()){
+                if(rs.next()){
+                    int idCliente= rs.getInt("id");
+                    String nome = rs.getString("nome");
+                    String email = rs.getString("email");
+                    LocalDate dataNascimento = rs.getDate("data_nascimento").toLocalDate();
+                    String telefone = rs.getString("telefone");
+
+                    cliente = new Cliente(idCliente, nome, email, dataNascimento, telefone);
+                } else {
+                    System.err.println("\nNenhum cliente encontrado com o ID (" + id + ").");
+                    return null;
+                }
+            }
+            return cliente;
+        }catch (SQLException e){
+            System.err.println("\nFalha ao buscar cliente por ID: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
