@@ -172,4 +172,42 @@ public class ClienteDAO {
             throw new RuntimeException(e);
         }
     }
+
+    public void remover(int id){
+        if(id <= 0){
+            System.err.println("\nID inválido.");
+            return;
+        }
+
+        String sql = "DELETE FROM cliente WHERE id = ?";
+
+        try (Connection connection = DB.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)){
+
+            connection.setAutoCommit(false);
+
+            AluguelDAO aluguelDAO = new AluguelDAO();
+            boolean existeAluguel = aluguelDAO.existeAluguelPorClienteId(id, connection);
+
+            if(existeAluguel){
+                System.err.println("\nNão foi possível excluir o cliente: existem aluguéis vinculados.");
+                connection.rollback();
+                return;
+            }
+
+            stmt.setInt(1, id);
+            int rows = stmt.executeUpdate();
+
+            if(rows > 0){
+                System.out.println("\nCliente excluído com sucesso!");
+                connection.commit();
+            } else {
+                System.err.println("\nNenhum cliente com o ID (" + id + ") foi excluido.");
+                connection.rollback();
+            }
+        }catch (SQLException e){
+            System.err.println("\nFalha ao excluir cliente: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
 }
