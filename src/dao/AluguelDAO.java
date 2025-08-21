@@ -1,5 +1,8 @@
 package dao;
 
+import db.DB;
+import model.Aluguel;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,6 +26,45 @@ public class AluguelDAO {
             }
         }catch (SQLException e){
             System.err.println("\nFalha ao buscar aluguel para o cliente de ID: " + id);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void cadastrarAluguel(Aluguel aluguel){
+        if(aluguel == null ||
+           aluguel.getCliente() == null || aluguel.getCliente().getId() <= 0 ||
+           aluguel.getFilme() == null || aluguel.getFilme().getId() <= 0 ||
+           aluguel.getDataInicio() == null || aluguel.getDataFim() == null ||
+           aluguel.getDataInicio().isAfter(aluguel.getDataFim())){
+
+           System.err.println("\nDados de aluguel inválidos.");
+           return;
+        }
+
+        String sql = "INSERT INTO aluguel (cliente_id, filme_id, data_inicio, data_fim) " +
+                "VALUES (?, ?, ?, ?)";
+
+        try (Connection connection = DB.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(sql)){
+
+            connection.setAutoCommit(false);
+
+            stmt.setInt(1, aluguel.getCliente().getId());
+            stmt.setInt(2, aluguel.getFilme().getId());
+            stmt.setDate(3, java.sql.Date.valueOf(aluguel.getDataInicio()));
+            stmt.setDate(4, java.sql.Date.valueOf(aluguel.getDataFim()));
+
+            int rows = stmt.executeUpdate();
+
+            if(rows > 0){
+                System.out.println("\nAluguel cadastrado com sucesso!");
+                connection.commit();
+            } else {
+                System.err.println("\nNenhum aluguel foi cadastrado.");
+                connection.rollback();
+            }
+        }catch (SQLException e){
+            System.err.println("\nErro no banco ao cadastrar aluguel: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
