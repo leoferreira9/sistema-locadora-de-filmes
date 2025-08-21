@@ -122,4 +122,29 @@ public class AluguelDAO {
             throw new RuntimeException(e);
         }
     }
+
+    public void remover(int id){
+        if(id <= 0){
+            System.err.println("\nID inválido.");
+            return;
+        }
+
+        String sql = "DELETE FROM aluguel WHERE id = ?";
+
+        try (Connection connection = DB.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(sql)){
+
+            stmt.setInt(1, id);
+            int rows = stmt.executeUpdate();
+
+            if(rows > 0){
+                System.out.println("\nAluguel excluído com sucesso!");
+            } else {
+                System.err.println("\nNenhum aluguel encontrado com o ID " + id);
+            }
+        }catch (SQLException e){
+            System.err.println("\nErro no banco ao excluir aluguel: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
 }
