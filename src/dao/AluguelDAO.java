@@ -68,4 +68,58 @@ public class AluguelDAO {
             throw new RuntimeException(e);
         }
     }
+
+    public void atualizar(Aluguel aluguel){
+        if(aluguel == null ||
+           aluguel.getCliente() == null || aluguel.getCliente().getId() <= 0 ||
+           aluguel.getFilme() == null || aluguel.getFilme().getId() <= 0 ||
+           aluguel.getDataInicio() == null || aluguel.getDataFim() == null ||
+           aluguel.getDataInicio().isAfter(aluguel.getDataFim())){
+
+           System.err.println("\nDados de aluguel inválidos.");
+           return;
+        }
+
+        String sql = "SELECT id, cliente_id, filme_id, data_inicio, data_fim " +
+                "FROM aluguel WHERE id = ?";
+
+        try (Connection connection = DB.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(sql)){
+
+            connection.setAutoCommit(false);
+            stmt.setInt(1, aluguel.getId());
+
+            try (ResultSet rs = stmt.executeQuery()){
+                if(!rs.next()){
+                    System.err.println("\nNenhum aluguel encontrado com o ID " + aluguel.getId());
+                    connection.rollback();
+                    return;
+                }
+
+                String updateSql = "UPDATE aluguel SET cliente_id = ?, filme_id = ?, data_inicio = ?, data_fim = ? " +
+                        "WHERE id = ?";
+
+                try (PreparedStatement updateStmt = connection.prepareStatement(updateSql)){
+                    updateStmt.setInt(1, aluguel.getCliente().getId());
+                    updateStmt.setInt(2, aluguel.getFilme().getId());
+                    updateStmt.setDate(3, java.sql.Date.valueOf(aluguel.getDataInicio()));
+                    updateStmt.setDate(4, java.sql.Date.valueOf(aluguel.getDataFim()));
+                    updateStmt.setInt(5, aluguel.getId());
+
+                    int rows = updateStmt.executeUpdate();
+
+                    if(rows > 0){
+                        System.out.println("\nAluguel atualizado com sucesso!");
+                        connection.commit();
+                    } else {
+                        System.err.println("\nFalha ao atualizar aluguel.");
+                        connection.rollback();
+                    }
+                }
+            }
+        }catch (SQLException e){
+            System.err.println("\nErro no banco ao atualizar aluguel: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
 }
