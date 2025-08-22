@@ -110,4 +110,60 @@ public class FilmeDAO {
             throw new RuntimeException(e);
         }
     }
+
+    public void atualizar(Filme filme){
+        if(filme == null ||
+           filme.getNome() == null || filme.getNome().trim().isEmpty() ||
+           filme.getGenero() == null || filme.getGenero().trim().isEmpty() ||
+           filme.getDataLancamento() == null){
+
+           System.err.println("\nDados Inválidos.");
+           return;
+        }
+
+        String sql = "SELECT id, nome, genero, data_lancamento, disponivel " +
+                "FROM filme WHERE id = ?";
+
+        try (Connection connection = DB.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(sql)){
+
+            connection.setAutoCommit(false);
+            stmt.setInt(1, filme.getId());
+
+            try (ResultSet rs = stmt.executeQuery()){
+                if(!rs.next()){
+                    System.err.println("\nNenhum filme encontrado com o ID (" + filme.getId() + ").");
+                    connection.rollback();
+                    return;
+                }
+
+                String updateSql = "UPDATE filme SET nome = ?, genero = ?, " +
+                        "data_lancamento = ?, disponivel = ? WHERE id = ?";
+
+                try (PreparedStatement updateStmt = connection.prepareStatement(updateSql)){
+
+                    updateStmt.setString(1, filme.getNome().trim());
+                    updateStmt.setString(2, filme.getGenero().trim());
+                    updateStmt.setDate(3, java.sql.Date.valueOf(filme.getDataLancamento()));
+                    updateStmt.setBoolean(4, filme.isDisponivel());
+                    updateStmt.setInt(5, filme.getId());
+
+                    int rows = updateStmt.executeUpdate();
+
+                    if(rows > 0){
+                        System.out.println("\nFilme atualizado com sucesso!");
+                        connection.commit();
+                    } else {
+                        System.err.println("\nFalha ao atualizar filme.");
+                        connection.rollback();
+                    }
+
+
+                }
+            }
+        }catch (SQLException e){
+            System.err.println("\nFalha ao atualizar filme: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
 }

@@ -150,9 +150,16 @@ public class ClienteDAO {
                     updateStmt.setString(4, cliente.getTelefone().trim());
                     updateStmt.setInt(5, cliente.getId());
 
-                    updateStmt.execute();
-                    System.out.println("\nCliente atualizado com sucesso!");
-                    connection.commit();
+                    int rows = updateStmt.executeUpdate();
+
+                    if(rows > 0){
+                        System.out.println("\nCliente atualizado com sucesso!");
+                        connection.commit();
+                    } else {
+                        System.err.println("\nFalha ao atualizar cliente.");
+                        connection.rollback();
+                    }
+
                 }
             }
         }catch (SQLException e){
