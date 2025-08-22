@@ -2,11 +2,16 @@ package dao;
 
 import db.DB;
 import model.Aluguel;
+import model.Cliente;
+import model.Filme;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AluguelDAO {
     public boolean existeAluguelPorClienteId(int id, Connection connection){
@@ -65,6 +70,42 @@ public class AluguelDAO {
             }
         }catch (SQLException e){
             System.err.println("\nErro no banco ao cadastrar aluguel: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<Aluguel> listar(){
+
+        String sql = "SELECT id, cliente_id, filme_id, data_inicio, data_fim " +
+                "FROM aluguel";
+
+        List<Aluguel> aluguels = new ArrayList<>();
+
+        ClienteDAO clienteDAO = new ClienteDAO();
+        FilmeDAO filmeDAO = new FilmeDAO();
+
+        try (Connection connection = DB.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()){
+
+            while(rs.next()){
+                Cliente c = clienteDAO.buscarPorId(rs.getInt("cliente_id"));
+                Filme f = filmeDAO.buscarPorId(rs.getInt("filme_id"));
+
+                if(c == null || f == null){
+                    System.err.println("\nAluguel ignorado: cliente ou filme não encontrado.");
+                    continue;
+                }
+
+                LocalDate dataInicio = rs.getDate("data_inicio").toLocalDate();
+                LocalDate dataFim = rs.getDate("data_fim").toLocalDate();
+
+                Aluguel aluguel = new Aluguel(c, f, dataInicio, dataFim);
+                aluguels.add(aluguel);
+            }
+            return aluguels;
+        }catch (SQLException e){
+            System.err.println("\nErro ao listar alugueis: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }

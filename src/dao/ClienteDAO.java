@@ -58,26 +58,17 @@ public class ClienteDAO {
 
         List<Cliente> clientes = new ArrayList<>();
         try (Connection connection = DB.getConnection();
-            PreparedStatement stmt = connection.prepareStatement(sql)){
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()){
 
-            boolean encontrou = false;
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String nome = rs.getString("nome");
+                String email = rs.getString("email");
+                LocalDate dataNascimento = rs.getDate("data_nascimento").toLocalDate();
+                String telefone = rs.getString("telefone");
 
-            try (ResultSet rs = stmt.executeQuery()){
-                while (rs.next()) {
-                    encontrou = true;
-
-                    int id = rs.getInt("id");
-                    String nome = rs.getString("nome");
-                    String email = rs.getString("email");
-                    LocalDate dataNascimento = rs.getDate("data_nascimento").toLocalDate();
-                    String telefone = rs.getString("telefone");
-
-                    clientes.add(new Cliente(id, nome, email, dataNascimento, telefone));
-                }
-
-                if(!encontrou){
-                    System.err.println("Não há clientes para exibir.");
-                }
+                clientes.add(new Cliente(id, nome, email, dataNascimento, telefone));
             }
             return clientes;
         }catch (SQLException e){
@@ -95,8 +86,6 @@ public class ClienteDAO {
         String sql = "SELECT id, nome, email, data_nascimento, telefone " +
                 "FROM cliente WHERE id = ?";
 
-        Cliente cliente;
-
         try (Connection connection = DB.getConnection();
             PreparedStatement stmt = connection.prepareStatement(sql)){
 
@@ -110,13 +99,12 @@ public class ClienteDAO {
                     LocalDate dataNascimento = rs.getDate("data_nascimento").toLocalDate();
                     String telefone = rs.getString("telefone");
 
-                    cliente = new Cliente(idCliente, nome, email, dataNascimento, telefone);
+                    return new Cliente(idCliente, nome, email, dataNascimento, telefone);
                 } else {
                     System.err.println("\nNenhum cliente encontrado com o ID (" + id + ").");
                     return null;
                 }
             }
-            return cliente;
         }catch (SQLException e){
             System.err.println("\nFalha ao buscar cliente por ID: " + e.getMessage());
             throw new RuntimeException(e);
