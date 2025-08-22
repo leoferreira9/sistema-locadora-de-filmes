@@ -35,6 +35,26 @@ public class AluguelDAO {
         }
     }
 
+    public boolean existeAluguelPorFilmeId(int id, Connection connection){
+        if(id <= 0){
+            System.err.println("\nID inválido.");
+            return false;
+        }
+
+        String sql = "SELECT id FROM aluguel WHERE filme_id = ? LIMIT 1";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)){
+            stmt.setInt(1, id);
+
+            try (ResultSet rs = stmt.executeQuery()){
+                return rs.next();
+            }
+        }catch (SQLException e){
+            System.err.println("\nFalha ao buscar aluguel para o filme de ID: " + id);
+            throw new RuntimeException(e);
+        }
+    }
+
     public void cadastrarAluguel(Aluguel aluguel){
         if(aluguel == null ||
            aluguel.getCliente() == null || aluguel.getCliente().getId() <= 0 ||

@@ -174,11 +174,7 @@ public class ClienteDAO {
             return;
         }
 
-        String sql = "DELETE FROM cliente WHERE id = ?";
-
-        try (Connection connection = DB.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)){
-
+        try (Connection connection = DB.getConnection()){
             connection.setAutoCommit(false);
 
             AluguelDAO aluguelDAO = new AluguelDAO();
@@ -190,15 +186,19 @@ public class ClienteDAO {
                 return;
             }
 
-            stmt.setInt(1, id);
-            int rows = stmt.executeUpdate();
+            String sql = "DELETE FROM cliente WHERE id = ?";
 
-            if(rows > 0){
-                System.out.println("\nCliente excluído com sucesso!");
-                connection.commit();
-            } else {
-                System.err.println("\nNenhum cliente com o ID (" + id + ") foi excluido.");
-                connection.rollback();
+            try (PreparedStatement stmt = connection.prepareStatement(sql)){
+                stmt.setInt(1, id);
+                int rows = stmt.executeUpdate();
+
+                if(rows > 0){
+                    System.out.println("\nCliente excluído com sucesso!");
+                    connection.commit();
+                } else {
+                    System.err.println("\nNenhum cliente com o ID (" + id + ") foi excluido.");
+                    connection.rollback();
+                }
             }
         }catch (SQLException e){
             System.err.println("\nFalha ao excluir cliente: " + e.getMessage());
