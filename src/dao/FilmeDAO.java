@@ -101,7 +101,7 @@ public class FilmeDAO {
                     boolean disponivel = rs.getBoolean("disponivel");
                     return new Filme(idFilme, nome, genero, dataLancamento, disponivel);
                 } else {
-                    System.err.println("\nNenhum filme encontrado com o ID (" + id + ").");
+                    System.err.println("Nenhum filme encontrado com o ID (" + id + ").\n");
                     return null;
                 }
             }

@@ -71,7 +71,7 @@ public class Filme {
     public String toString() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         return String.format(
-                "(ID: %d)\nNome: %s\nGênero: %s\nData de Lançamento: %s\nDisponível: %s",
+                "\n(ID: %d)\nNome: %s\nGênero: %s\nData de Lançamento: %s\nDisponível: %s",
                 id, nome, genero, String.format(formatter.format(dataLancamento)), disponivel ? "Sim" : "Não"
         );
     }

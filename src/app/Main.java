@@ -3,6 +3,7 @@ package app;
 import dao.ClienteDAO;
 import dao.FilmeDAO;
 import model.Cliente;
+import model.Filme;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -29,6 +30,7 @@ public class Main {
                     menuGerenciarCliente(sc);
                     break;
                 case 2:
+                    menuGerenciarFilme(sc);
                     break;
                 case 3:
                     break;
@@ -91,6 +93,25 @@ public class Main {
             }
 
             return telefone;
+        }
+    }
+
+    public static boolean lerDisponibilidade(Scanner sc, String mensagem){
+        while(true){
+            try {
+                System.out.print(mensagem);
+                int opcao = Integer.parseInt(sc.nextLine());
+
+                if(opcao == 1){
+                    return true;
+                } else if(opcao == 2){
+                    return false;
+                } else {
+                    System.out.println("\nOpção inválida. Digite 1 para SIM ou 2 para NÃO.\n");
+                }
+            }catch (NumberFormatException e){
+                System.out.println("\nEntrada inválida. Por favor, digite apenas números (1 para SIM ou 2 para NÃO).\n");
+            }
         }
     }
 
@@ -159,6 +180,80 @@ public class Main {
                 case 5:
                     int idParaRemover = lerInt(sc, "\nInforme o ID do cliente que deseja remover: ");
                     clienteDAO.remover(idParaRemover);
+                    break;
+                case 0:
+                    break;
+                default:
+                    System.err.println("Opção inválida.\n");
+            }
+        }while(opcao != 0);
+    }
+
+    public static void menuGerenciarFilme(Scanner sc){
+        FilmeDAO filmeDAO = new FilmeDAO();
+        int opcao;
+
+        do{
+            System.out.println("\n====== GERENCIAR FILMES ======");
+            System.out.println("1 - Cadastrar novo filme");
+            System.out.println("2 - Listar todos os filmes");
+            System.out.println("3 - Buscar filme por ID");
+            System.out.println("4 - Atualizar dados do filme");
+            System.out.println("5 - Remover filme");
+            System.out.println("0 - Voltar");
+            opcao = lerInt(sc, "Escolha uma opção: ");
+
+            switch (opcao){
+                case 1:
+                    String nome = lerString(sc, "\nInforme o nome do filme: ");
+                    String genero = lerString(sc, "Informe o gênero do filme: ");
+                    LocalDate dataLancamento = lerData(sc, "Informe a data de lançamento: ");
+                    boolean disponivel = lerDisponibilidade(sc, "O filme está disponível? \n1 - Sim\n2 - Não\nEscolha um número: ");
+                    Filme filme = new Filme(nome, genero, dataLancamento, disponivel);
+                    filmeDAO.inserir(filme);
+                    break;
+                case 2:
+                    List<Filme> filmes = filmeDAO.listar();
+                    if(filmes.isEmpty()){
+                        System.out.println("\nNão há filmes cadastrados!");
+                        continue;
+                    }
+                    filmes.forEach(System.out::println);
+                    System.out.println("===================================");
+                    break;
+                case 3:
+                    int id = lerInt(sc, "\nInforme o ID do filme: ");
+                    Filme filmeEncontrado = filmeDAO.buscarPorId(id);
+                    if(filmeEncontrado != null){
+                        System.out.println(filmeEncontrado);
+                    }
+                    break;
+                case 4:
+                    List<Filme> lista = filmeDAO.listar();
+                    if(lista.isEmpty()){
+                        System.out.println("\nNão há filmes cadastrados!");
+                        continue;
+                    }
+                    lista.forEach(System.out::println);
+                    System.out.println("===================================");
+                    int idFilme = lerInt(sc, "\nInforme o ID do filme que deseja atualizar: ");
+                    Filme f = filmeDAO.buscarPorId(idFilme);
+
+                    if(f == null){
+                        continue;
+                    }
+
+                    String novoNome = lerString(sc, "Informe o nome do filme: ");
+                    String novoGenero = lerString(sc, "Informe o gênero do filme: ");
+                    LocalDate novaDataLancamento = lerData(sc, "Informe a data de lançamento: ");
+                    boolean novoDisponivel = lerDisponibilidade(sc, "O filme está disponível? \n1 - Sim\n2 - Não\nEscolha um número: ");
+
+                    f = new Filme(idFilme, novoNome, novoGenero, novaDataLancamento, novoDisponivel);
+                    filmeDAO.atualizar(f);
+                    break;
+                case 5:
+                    int idParaRemover = lerInt(sc, "\nInforme o ID do filme que deseja remover: ");
+                    filmeDAO.remover(idParaRemover);
                     break;
                 case 0:
                     break;
