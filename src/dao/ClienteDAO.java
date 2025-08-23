@@ -101,7 +101,7 @@ public class ClienteDAO {
 
                     return new Cliente(idCliente, nome, email, dataNascimento, telefone);
                 } else {
-                    System.err.println("\nNenhum cliente encontrado com o ID (" + id + ").");
+                    System.err.print("Nenhum cliente encontrado com o ID (" + id + ").\n\n");
                     return null;
                 }
             }
@@ -133,7 +133,7 @@ public class ClienteDAO {
 
             try (ResultSet rs = stmt.executeQuery()){
                 if(!rs.next()){
-                    System.err.println("\nNenhum cliente encontrado com o ID (" + cliente.getId() + ").");
+                    System.err.println("\nNenhum cliente encontrado com o ID (" + cliente.getId() + ").\n\n");
                     connection.rollback();
                     return;
                 }
@@ -196,7 +196,7 @@ public class ClienteDAO {
                     System.out.println("\nCliente excluído com sucesso!");
                     connection.commit();
                 } else {
-                    System.err.println("\nNenhum cliente com o ID (" + id + ") foi excluido.");
+                    System.err.print("Nenhum cliente com o ID (" + id + ") foi excluido.\n\n");
                     connection.rollback();
                 }
             }

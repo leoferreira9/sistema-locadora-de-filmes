@@ -71,7 +71,7 @@ public class Cliente {
     public String toString() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         return String.format(
-                "(ID: %d)\nNome: %s\nEmail: %s\nData de Nascimento: %s\nTelefone: %s",
+                "\n(ID: %d)\nNome: %s\nEmail: %s\nData de Nascimento: %s\nTelefone: %s",
                 id, nome, email, String.format(formatter.format(dataNascimento)), telefone
         );
     }
