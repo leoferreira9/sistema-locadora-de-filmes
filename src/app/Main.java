@@ -1,7 +1,9 @@
 package app;
 
+import dao.AluguelDAO;
 import dao.ClienteDAO;
 import dao.FilmeDAO;
+import model.Aluguel;
 import model.Cliente;
 import model.Filme;
 
@@ -33,6 +35,7 @@ public class Main {
                     menuGerenciarFilme(sc);
                     break;
                 case 3:
+                    menuGerenciarAluguel(sc);
                     break;
                 case 0:
                     System.out.println("\nSaindo...");
@@ -49,7 +52,7 @@ public class Main {
                 System.out.print(mensagem);
                 return Integer.parseInt(sc.nextLine());
             }catch (NumberFormatException e){
-                System.out.println("\nOpção inválida. Por favor digite um número inteiro.");
+                System.out.println("\nOpção inválida. Por favor digite um número inteiro.\n");
             }
         }
     }
@@ -207,7 +210,7 @@ public class Main {
                 case 1:
                     String nome = lerString(sc, "\nInforme o nome do filme: ");
                     String genero = lerString(sc, "Informe o gênero do filme: ");
-                    LocalDate dataLancamento = lerData(sc, "Informe a data de lançamento: ");
+                    LocalDate dataLancamento = lerData(sc, "Informe a data de lançamento no formato (dd/MM/yyyy): ");
                     boolean disponivel = lerDisponibilidade(sc, "O filme está disponível? \n1 - Sim\n2 - Não\nEscolha um número: ");
                     Filme filme = new Filme(nome, genero, dataLancamento, disponivel);
                     filmeDAO.inserir(filme);
@@ -263,4 +266,116 @@ public class Main {
         }while(opcao != 0);
     }
 
+    public static void menuGerenciarAluguel(Scanner sc){
+        AluguelDAO aluguelDAO = new AluguelDAO();
+        ClienteDAO clienteDAO = new ClienteDAO();
+        FilmeDAO filmeDAO = new FilmeDAO();
+        int opcao;
+
+        do{
+            System.out.println("\n====== GERENCIAR ALUGUEIS ======");
+            System.out.println("1 - Cadastrar novo aluguel");
+            System.out.println("2 - Listar todos os alugueis");
+            System.out.println("3 - Atualizar dados do aluguel");
+            System.out.println("4 - Remover aluguel");
+            System.out.println("0 - Voltar");
+            opcao = lerInt(sc, "Escolha uma opção: ");
+
+            switch (opcao){
+                case 1:
+                    List<Cliente> clientes = clienteDAO.listar();
+                    if(clientes.isEmpty()){
+                        System.out.println("\nNão há clientes cadastrados!");
+                        continue;
+                    }
+                    clientes.forEach(System.out::println);
+                    System.out.println("===================================");
+                    int clienteId = lerInt(sc, "\nInforme o ID do cliente realizará um aluguel: ");
+                    Cliente cliente = clienteDAO.buscarPorId(clienteId);
+
+                    if(cliente == null){
+                        System.out.println("\nCliente não encontrado!");
+                       continue;
+                    }
+
+                    List<Filme> filmes = filmeDAO.listar();
+                    if(filmes.isEmpty()){
+                        System.out.println("\nNão há filmes cadastrados!");
+                        continue;
+                    }
+
+                    filmes.forEach(System.out::println);
+                    System.out.println("===================================");
+                    int filmeId = lerInt(sc, "\nInforme o ID do filme que será alugado: ");
+                    Filme filme = filmeDAO.buscarPorId(filmeId);
+
+                    if(filme == null){
+                        System.out.println("\nFilme não encontrado!");
+                        continue;
+                    }
+
+                    if(!filme.isDisponivel()){
+                        System.out.println("\nEste filme está marcado como indisponível para aluguel!");
+                        continue;
+                    }
+
+                    LocalDate dataDevolucao;
+                    while(true){
+                        dataDevolucao = lerData(sc, "\nInforme a data de devolução no formato (dd/MM/yyyy): ");
+                        if(dataDevolucao.isBefore(LocalDate.now())){
+                            System.out.println("\nA data de devolução não pode ser anterior à data atual!");
+                        } else {
+                            break;
+                        }
+                    }
+
+                    Aluguel a = new Aluguel(cliente, filme, LocalDate.now(), dataDevolucao);
+                    aluguelDAO.cadastrarAluguel(a);
+                    break;
+                case 2:
+                    List<Aluguel> alugueis = aluguelDAO.listar();
+                    if(alugueis.isEmpty()){
+                        System.out.println("\nNão há alugueis cadastrados!");
+                        continue;
+                    }
+                    alugueis.forEach(System.out::println);
+                    System.out.println("===================================");
+                    break;
+                case 3:
+                    List<Aluguel> lista = aluguelDAO.listar();
+                    if(lista.isEmpty()){
+                        System.out.println("\nNão há alugueis cadastrados!");
+                        continue;
+                    }
+                    lista.forEach(System.out::println);
+                    System.out.println("===================================");
+                    int idAluguel = lerInt(sc, "\nInforme o ID do aluguel que será atualizado: ");
+                    Aluguel aluguel = aluguelDAO.buscarAluguelPorId(idAluguel);
+
+                    if(aluguel == null){
+                        System.out.println("Nenhum aluguel encontrado com o ID (" + idAluguel + ").");
+                        continue;
+                    }
+
+                    LocalDate novaDataDevolucao = lerData(sc, "Informe a data de devolução: ");
+
+                    if(novaDataDevolucao.isBefore(LocalDate.now())){
+                        System.out.println("\nA data de devolução não pode ser anterior à data atual!");
+                        continue;
+                    }
+
+                    aluguel.setDataFim(novaDataDevolucao);
+                    aluguelDAO.atualizar(aluguel);
+                    break;
+                case 4:
+                    int id = lerInt(sc, "\nInforme o ID do aluguel que deseja remover: ");
+                    aluguelDAO.remover(id);
+                    break;
+                case 0:
+                    break;
+                default:
+                    System.err.println("Opção inválida.\n");
+            }
+        }while(opcao != 0);
+    }
 }

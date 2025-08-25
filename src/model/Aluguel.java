@@ -71,7 +71,7 @@ public class Aluguel {
     public String toString() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         return String.format(
-                "(ID: %d)\nCliente: %s\nFilme: %s\nData de Início: %s\nData Final: %s",
+                "\n(ID: %d)\nCliente: %s\nFilme: %s\nData de Início: %s\nData Final: %s",
                 id, cliente.getNome(), filme.getNome(),
                 String.format(formatter.format(dataInicio)),
                 String.format(formatter.format(dataFim))

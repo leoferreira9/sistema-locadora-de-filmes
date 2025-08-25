@@ -66,6 +66,11 @@ public class AluguelDAO {
            return;
         }
 
+        if (aluguel.getDataFim().isBefore(aluguel.getDataInicio())) {
+            System.err.println("\nA data de devolução não pode ser anterior à data de início!");
+            return;
+        }
+
         String sql = "INSERT INTO aluguel (cliente_id, filme_id, data_inicio, data_fim) " +
                 "VALUES (?, ?, ?, ?)";
 
@@ -73,6 +78,12 @@ public class AluguelDAO {
             PreparedStatement stmt = connection.prepareStatement(sql)){
 
             connection.setAutoCommit(false);
+
+            if(existeAluguelPorFilmeId(aluguel.getFilme().getId(), connection)){
+                System.out.println("\nEste filme já está alugado e não pode ser reservado!");
+                connection.rollback();
+                return;
+            }
 
             stmt.setInt(1, aluguel.getCliente().getId());
             stmt.setInt(2, aluguel.getFilme().getId());
@@ -84,6 +95,13 @@ public class AluguelDAO {
             if(rows > 0){
                 System.out.println("\nAluguel cadastrado com sucesso!");
                 connection.commit();
+
+                String updateDisponibilidadeSql = "UPDATE filme SET disponivel = false WHERE id = ?";
+                try (PreparedStatement updateDisponibilidadeStmt = connection.prepareStatement(updateDisponibilidadeSql)){
+                    updateDisponibilidadeStmt.setInt(1, aluguel.getFilme().getId());
+                    updateDisponibilidadeStmt.execute();
+                }
+
             } else {
                 System.err.println("\nNenhum aluguel foi cadastrado.");
                 connection.rollback();
@@ -99,7 +117,7 @@ public class AluguelDAO {
         String sql = "SELECT id, cliente_id, filme_id, data_inicio, data_fim " +
                 "FROM aluguel";
 
-        List<Aluguel> aluguels = new ArrayList<>();
+        List<Aluguel> alugueis = new ArrayList<>();
 
         ClienteDAO clienteDAO = new ClienteDAO();
         FilmeDAO filmeDAO = new FilmeDAO();
@@ -109,6 +127,7 @@ public class AluguelDAO {
             ResultSet rs = stmt.executeQuery()){
 
             while(rs.next()){
+                int idAluguel = rs.getInt("id");
                 Cliente c = clienteDAO.buscarPorId(rs.getInt("cliente_id"));
                 Filme f = filmeDAO.buscarPorId(rs.getInt("filme_id"));
 
@@ -120,12 +139,49 @@ public class AluguelDAO {
                 LocalDate dataInicio = rs.getDate("data_inicio").toLocalDate();
                 LocalDate dataFim = rs.getDate("data_fim").toLocalDate();
 
-                Aluguel aluguel = new Aluguel(c, f, dataInicio, dataFim);
-                aluguels.add(aluguel);
+                Aluguel aluguel = new Aluguel(idAluguel, c, f, dataInicio, dataFim);
+                alugueis.add(aluguel);
             }
-            return aluguels;
+            return alugueis;
         }catch (SQLException e){
             System.err.println("\nErro ao listar alugueis: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Aluguel buscarAluguelPorId(int id){
+        if(id <= 0){
+            System.err.println("\nID inválido.");
+            return null;
+        }
+
+        String sql = "SELECT id, cliente_id, filme_id, data_inicio, data_fim " +
+                "FROM aluguel WHERE id = ?";
+
+        try (Connection connection = DB.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(sql)){
+
+            stmt.setInt(1, id);
+
+            try (ResultSet rs = stmt.executeQuery()){
+                if(rs.next()){
+                    ClienteDAO clienteDAO = new ClienteDAO();
+                    FilmeDAO filmeDAO = new FilmeDAO();
+
+                    int idAluguel = rs.getInt("id");
+                    int idCliente = rs.getInt("cliente_id");
+                    int idFilme = rs.getInt("filme_id");
+                    LocalDate dataInicio = rs.getDate("data_inicio").toLocalDate();
+                    LocalDate dataFim = rs.getDate("data_fim").toLocalDate();
+
+                    Cliente c = clienteDAO.buscarPorId(idCliente);
+                    Filme f = filmeDAO.buscarPorId(idFilme);
+                    return new Aluguel(idAluguel, c, f, dataInicio, dataFim);
+                }
+            }
+            return null;
+        }catch (SQLException e){
+            System.err.println("\nErro ao buscar aluguel por ID: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -141,42 +197,39 @@ public class AluguelDAO {
            return;
         }
 
-        String sql = "SELECT id, cliente_id, filme_id, data_inicio, data_fim " +
-                "FROM aluguel WHERE id = ?";
+        if (aluguel.getDataFim().isBefore(aluguel.getDataInicio())) {
+            System.err.println("\nA data de devolução não pode ser anterior à data de início!");
+            return;
+        }
+
+        String updateSql = "UPDATE aluguel SET cliente_id = ?, filme_id = ?, data_inicio = ?, data_fim = ? " +
+                "WHERE id = ?";
 
         try (Connection connection = DB.getConnection();
-            PreparedStatement stmt = connection.prepareStatement(sql)){
+             PreparedStatement updateStmt = connection.prepareStatement(updateSql)) {
 
             connection.setAutoCommit(false);
-            stmt.setInt(1, aluguel.getId());
 
-            try (ResultSet rs = stmt.executeQuery()){
-                if(!rs.next()){
-                    System.err.println("\nNenhum aluguel encontrado com o ID " + aluguel.getId());
-                    connection.rollback();
-                    return;
-                }
+            if(existeAluguelPorFilmeId(aluguel.getFilme().getId(), connection)){
+                System.err.println("\nEste filme já está alugado e não pode ser reservado!");
+                connection.rollback();
+                return;
+            }
 
-                String updateSql = "UPDATE aluguel SET cliente_id = ?, filme_id = ?, data_inicio = ?, data_fim = ? " +
-                        "WHERE id = ?";
+            updateStmt.setInt(1, aluguel.getCliente().getId());
+            updateStmt.setInt(2, aluguel.getFilme().getId());
+            updateStmt.setDate(3, java.sql.Date.valueOf(aluguel.getDataInicio()));
+            updateStmt.setDate(4, java.sql.Date.valueOf(aluguel.getDataFim()));
+            updateStmt.setInt(5, aluguel.getId());
 
-                try (PreparedStatement updateStmt = connection.prepareStatement(updateSql)){
-                    updateStmt.setInt(1, aluguel.getCliente().getId());
-                    updateStmt.setInt(2, aluguel.getFilme().getId());
-                    updateStmt.setDate(3, java.sql.Date.valueOf(aluguel.getDataInicio()));
-                    updateStmt.setDate(4, java.sql.Date.valueOf(aluguel.getDataFim()));
-                    updateStmt.setInt(5, aluguel.getId());
+            int rows = updateStmt.executeUpdate();
 
-                    int rows = updateStmt.executeUpdate();
-
-                    if(rows > 0){
-                        System.out.println("\nAluguel atualizado com sucesso!");
-                        connection.commit();
-                    } else {
-                        System.err.println("\nFalha ao atualizar aluguel.");
-                        connection.rollback();
-                    }
-                }
+            if (rows > 0) {
+                System.out.println("\nAluguel atualizado com sucesso!");
+                connection.commit();
+            } else {
+                System.err.println("\nFalha ao atualizar aluguel.");
+                connection.rollback();
             }
         }catch (SQLException e){
             System.err.println("\nErro no banco ao atualizar aluguel: " + e.getMessage());
@@ -200,6 +253,11 @@ public class AluguelDAO {
 
             if(rows > 0){
                 System.out.println("\nAluguel excluído com sucesso!");
+                String sqlUpdate = "UPDATE filme SET disponivel = true WHERE id = (SELECT filme_id FROM aluguel WHERE id = ?)";
+                try (PreparedStatement deleteStmt = connection.prepareStatement(sqlUpdate)){
+                    deleteStmt.setInt(1, id);
+                    deleteStmt.execute();
+                }
             } else {
                 System.err.println("\nNenhum aluguel encontrado com o ID " + id);
             }
